@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Providers Availability</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f5f7;
+    --surface: #ffffff;
+    --surface-2: #f0f0f3;
+    --border: rgba(0,0,0,0.08);
+    --text-primary: #111113;
+    --text-secondary: #6e6e80;
+    --text-tertiary: #a0a0b0;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+
+    --morning-bg: #E1F5EE; --morning-text: #0F6E56; --morning-dot: #0F6E56;
+    --afternoon-bg: #E6F1FB; --afternoon-text: #185FA5; --afternoon-dot: #185FA5;
+    --allday-bg: #FEF0E0; --allday-text: #B85C0A; --allday-dot: #C96A12;
+    --unavail-bg: var(--surface); --unavail-text: #b0b0c0; --unavail-dot: #c0c0cc;
+
+    --connected: #16a34a;
+    --offline: #dc2626;
+    --syncing: #C96A12;
+    --toggle-track: #d1d1d8;
+    --toggle-thumb: #ffffff;
+    --name-col: 88px;
+    --cell-radius: 8px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #1a1a1e;
+    --surface: #26262c;
+    --surface-2: #303038;
+    --border: rgba(255,255,255,0.07);
+    --text-primary: #f0f0f4;
+    --text-secondary: #9090a8;
+    --text-tertiary: #606075;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.25);
+
+    --morning-bg: #085041; --morning-text: #9FE1CB; --morning-dot: #9FE1CB;
+    --afternoon-bg: #0C447C; --afternoon-text: #B5D4F4; --afternoon-dot: #B5D4F4;
+    --allday-bg: #5C2E00; --allday-text: #FBCB8A; --allday-dot: #F0A84A;
+    --unavail-bg: var(--surface); --unavail-text: #505065; --unavail-dot: #404050;
+    --toggle-track: #4a4a58;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    transition: background 0.25s, color 0.25s;
+    padding: 24px 16px 48px;
+  }
+
+  .app { max-width: 720px; margin: 0 auto; }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 12px;
+  }
+  .app-title { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
+  .app-title span { font-weight: 300; color: var(--text-secondary); }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+
+  /* Connection badge */
+  .connection-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    cursor: default;
+    user-select: none;
+    transition: background 0.25s, border-color 0.25s;
+  }
+  .conn-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+  .conn-dot.connected {
+    background: var(--connected);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--connected) 25%, transparent);
+  }
+  .conn-dot.offline {
+    background: var(--offline);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--offline) 25%, transparent);
+  }
+  .conn-dot.syncing {
+    background: var(--syncing);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--syncing) 25%, transparent);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  .conn-label.connected { color: var(--connected); }
+  .conn-label.offline { color: var(--offline); }
+  .conn-label.syncing { color: var(--syncing); }
+
+  /* Dark mode toggle */
+  .theme-toggle {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 5px 10px;
+    cursor: pointer; box-shadow: var(--shadow-sm);
+    transition: background 0.25s; user-select: none;
+  }
+  .theme-toggle .icon { font-size: 13px; line-height: 1; }
+  .toggle-track {
+    width: 30px; height: 17px;
+    background: var(--toggle-track);
+    border-radius: 10px; position: relative;
+    transition: background 0.25s;
+  }
+  .toggle-track.on { background: var(--afternoon-bg); }
+  .toggle-thumb {
+    position: absolute; top: 2px; left: 2px;
+    width: 13px; height: 13px; border-radius: 50%;
+    background: var(--toggle-thumb);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.22s cubic-bezier(.4,0,.2,1);
+  }
+  .toggle-track.on .toggle-thumb { transform: translateX(13px); }
+
+  /* Month nav */
+  .month-nav {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 16px;
+  }
+  .month-label { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+  .nav-btn {
+    width: 32px; height: 32px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text-primary); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-sm); transition: background 0.15s, box-shadow 0.15s;
+    font-size: 15px;
+  }
+  .nav-btn:hover { background: var(--surface-2); box-shadow: var(--shadow-md); }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 20px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .legend-dot.morning { background: var(--morning-dot); }
+  .legend-dot.afternoon { background: var(--afternoon-dot); }
+  .legend-dot.allday { background: var(--allday-dot); }
+  .legend-dot.unavail { background: var(--unavail-dot); border: 1px solid var(--border); }
+
+  /* Calendar card */
+  .calendar-card {
+    background: var(--surface); border-radius: 16px;
+    border: 1px solid var(--border); box-shadow: var(--shadow-md);
+    overflow: hidden; transition: background 0.25s, border-color 0.25s;
+    position: relative;
+  }
+
+  /* Loading overlay */
+  .loading-overlay {
+    position: absolute; inset: 0; z-index: 10;
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 16px;
+    transition: opacity 0.3s;
+  }
+  .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  .spinner {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 3px solid var(--border);
+    border-top-color: #C96A12;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Day header */
+  .day-header-row {
+    display: grid;
+    grid-template-columns: var(--name-col) repeat(5, 1fr);
+    border-bottom: 1px solid var(--border);
+    padding: 0 12px;
+  }
+  .day-header-cell {
+    padding: 10px 4px; text-align: center;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+  .day-header-cell:first-child { text-align: left; color: transparent; }
+
+  /* Week groups */
+  .week-group { border-bottom: 1px solid var(--border); }
+  .week-group:last-child { border-bottom: none; }
+
+  .week-date-row {
+    display: grid;
+    grid-template-columns: var(--name-col) repeat(5, 1fr);
+    padding: 6px 12px 0;
+  }
+  .week-date-cell {
+    text-align: center; font-size: 11px;
+    color: var(--text-tertiary); font-weight: 500; padding: 2px 4px;
+  }
+  .week-date-cell.today-date { color: #C96A12; font-weight: 700; }
+  .week-date-cell:first-child { text-align: left; }
+
+  .person-row {
+    display: grid;
+    grid-template-columns: var(--name-col) repeat(5, 1fr);
+    padding: 4px 12px; align-items: center;
+  }
+  .person-row:last-child { padding-bottom: 10px; }
+  .person-name {
+    font-size: 12px; font-weight: 600; color: var(--text-secondary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px;
+  }
+
+  /* Cells */
+  .avail-cell {
+    margin: 2px 3px; border-radius: var(--cell-radius);
+    padding: 5px 4px; text-align: center;
+    font-size: 11px; font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.12s, box-shadow 0.15s, filter 0.15s;
+    user-select: none; min-height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    letter-spacing: 0.1px; position: relative;
+  }
+  .avail-cell:hover { opacity: 0.85; transform: scale(1.04); box-shadow: var(--shadow-md); z-index: 1; }
+  .avail-cell:active { transform: scale(0.97); }
+  .avail-cell.morning { background: var(--morning-bg); color: var(--morning-text); }
+  .avail-cell.afternoon { background: var(--afternoon-bg); color: var(--afternoon-text); }
+  .avail-cell.allday { background: var(--allday-bg); color: var(--allday-text); }
+  .avail-cell.unavailable { background: var(--unavail-bg); color: var(--unavail-text); border: 1px dashed var(--border); }
+  .avail-cell.empty { background: var(--surface-2); color: var(--text-tertiary); font-size: 16px; }
+  .avail-cell.past { opacity: 0.38; filter: saturate(0.6); }
+  .avail-cell.past:hover { opacity: 0.62; filter: saturate(0.85); transform: scale(1.04); box-shadow: var(--shadow-md); }
+
+  /* Popup */
+  .popup-overlay { position: fixed; inset: 0; z-index: 100; background: transparent; }
+  .popup-menu {
+    position: fixed; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 101; overflow: hidden; min-width: 160px;
+    animation: popIn 0.12s cubic-bezier(.4,0,.2,1);
+  }
+  @keyframes popIn { from { opacity:0; transform:scale(0.92) translateY(-4px); } to { opacity:1; transform:scale(1) translateY(0); } }
+  .popup-title {
+    font-size: 11px; font-weight: 600; color: var(--text-tertiary);
+    letter-spacing: 0.5px; text-transform: uppercase; padding: 10px 14px 6px;
+  }
+  .popup-option {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: background 0.1s; color: var(--text-primary);
+  }
+  .popup-option:hover { background: var(--surface-2); }
+  .popup-option .opt-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .popup-option .check { margin-left: auto; font-size: 13px; color: #C96A12; }
+
+  /* Calendar scroll */
+  .calendar-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .calendar-inner { min-width: 480px; }
+
+  /* Last updated */
+  .last-updated {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 10px; padding: 0 2px;
+    font-size: 11px; color: var(--text-tertiary);
+    min-height: 16px;
+  }
+  .lu-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--text-tertiary); opacity: 0.5; flex-shrink: 0;
+  }
+
+  footer { margin-top: 20px; text-align: center; font-size: 11px; color: var(--text-tertiary); }
+
+  @media (max-width: 600px) {
+    .app-title { font-size: 16px; }
+    .connection-badge .conn-label { display: none; }
+    body { padding: 16px 12px 40px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="app-title">Providers <span>Availability</span></div>
+    <div class="header-right">
+      <div class="connection-badge" id="connBadge">
+        <div class="conn-dot syncing" id="connDot"></div>
+        <span class="conn-label syncing" id="connLabel">Connecting…</span>
+      </div>
+      <div class="theme-toggle" id="themeToggle" title="Toggle dark mode">
+        <span class="icon">☀️</span>
+        <div class="toggle-track" id="toggleTrack"><div class="toggle-thumb"></div></div>
+        <span class="icon">🌙</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="month-nav">
+    <button class="nav-btn" id="prevBtn">&#8249;</button>
+    <div class="month-label" id="monthLabel"></div>
+    <button class="nav-btn" id="nextBtn">&#8250;</button>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot morning"></div>Morning (AM)</div>
+    <div class="legend-item"><div class="legend-dot afternoon"></div>Afternoon (PM)</div>
+    <div class="legend-item"><div class="legend-dot allday"></div>All Day</div>
+    <div class="legend-item"><div class="legend-dot unavail"></div>OFF</div>
+  </div>
+
+  <div class="calendar-card">
+    <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+    <div class="calendar-scroll">
+      <div class="calendar-inner" id="calendarInner"></div>
+    </div>
+  </div>
+
+  <div class="last-updated" id="lastUpdated"></div>
+  <footer>Tap any cell to set availability &nbsp;·&nbsp; Providers Availability</footer>
+</div>
+
+<!-- Popup -->
+<div class="popup-overlay" id="popupOverlay" style="display:none;"></div>
+<div class="popup-menu" id="popupMenu" style="display:none;">
+  <div class="popup-title" id="popupTitle">Set Availability</div>
+  <div class="popup-option" data-val="morning"><div class="opt-dot" style="background:var(--morning-dot)"></div>Morning (AM)<span class="check" id="chkMorning" style="display:none">✓</span></div>
+  <div class="popup-option" data-val="afternoon"><div class="opt-dot" style="background:var(--afternoon-dot)"></div>Afternoon (PM)<span class="check" id="chkAfternoon" style="display:none">✓</span></div>
+  <div class="popup-option" data-val="allday"><div class="opt-dot" style="background:var(--allday-dot)"></div>All Day<span class="check" id="chkAllday" style="display:none">✓</span></div>
+  <div class="popup-option" data-val="unavailable"><div class="opt-dot" style="background:var(--unavail-dot)"></div>OFF<span class="check" id="chkUnavailable" style="display:none">✓</span></div>
+  <div class="popup-option" data-val="clear" style="border-top:1px solid var(--border);color:var(--text-tertiary);font-size:12px"><div class="opt-dot" style="background:transparent"></div>Reset to default</div>
+</div>
+
+<!-- Firebase SDK (compat v9) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+  // ── Firebase init ──────────────────────────────────────────────────────────
+  const firebaseConfig = {
+    apiKey:            "AIzaSyA2FzAM_K-247AFaHr38rhwctEFC23ADzI",
+    authDomain:        "calendario-mir.firebaseapp.com",
+    databaseURL:       "https://calendario-mir-default-rtdb.firebaseio.com",
+    projectId:         "calendario-mir",
+    storageBucket:     "calendario-mir.firebasestorage.app",
+    messagingSenderId: "259452878334",
+    appId:             "1:259452878334:web:5082c0afc59c8f177814af"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const availRef = db.ref('availability');
+  const metaRef  = db.ref('meta');
+
+  // ── App state ──────────────────────────────────────────────────────────────
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const minMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const maxMonth = new Date(today.getFullYear(), today.getMonth() + 3, 1);
+
+  let currentMonth = new Date(minMonth);
+  let darkMode = localStorage.getItem('calMIR_dark') === '1';
+  let availability = {};
+
+  const PEOPLE = ['Dra.', 'Damaris'];
+  const DEFAULTS = ['morning', 'afternoon']; // Dra. → AM, Damaris → PM
+  const STATE_LABELS = { morning: 'AM', afternoon: 'PM', allday: 'All Day', unavailable: 'OFF' };
+  const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+
+  // ── Connection status (real Firebase) ─────────────────────────────────────
+  const connectedRef = db.ref('.info/connected');
+  connectedRef.on('value', snap => {
+    const online = snap.val() === true;
+    setConnStatus(online ? 'connected' : 'offline');
+  });
+
+  function setConnStatus(state) {
+    const dot   = document.getElementById('connDot');
+    const label = document.getElementById('connLabel');
+    dot.className   = `conn-dot ${state}`;
+    label.className = `conn-label ${state}`;
+    label.textContent = state === 'connected' ? 'Connected'
+                      : state === 'syncing'   ? 'Syncing…'
+                      : 'Offline';
+  }
+
+  // ── Real-time listener — syncs all clients instantly ──────────────────────
+  let firstLoad = true;
+
+  function hideLoading() {
+    if (!firstLoad) return;
+    firstLoad = false;
+    document.getElementById('loadingOverlay').classList.add('hidden');
+  }
+
+  // Safety timeout: if Firebase doesn't respond in 8s, unblock the UI anyway
+  setTimeout(hideLoading, 8000);
+
+  availRef.on('value', snap => {
+    availability = snap.val() || {};
+    renderCalendar();
+    hideLoading();
+  }, err => {
+    console.error('Firebase read error:', err.code, err.message);
+    setConnStatus('offline');
+    hideLoading();
+  });
+
+  // Last updated from Firebase
+  metaRef.child('lastUpdate').on('value', snap => {
+    const val = snap.val();
+    renderLastUpdated(val);
+  });
+
+  // ── Write to Firebase ──────────────────────────────────────────────────────
+  async function writeAvail(key, state) {
+    setConnStatus('syncing');
+    try {
+      if (state === null) {
+        await availRef.child(key).remove();
+      } else {
+        await availRef.child(key).set(state);
+      }
+      await metaRef.child('lastUpdate').set(new Date().toISOString());
+      setConnStatus('connected');
+    } catch (err) {
+      console.error('Firebase write error:', err);
+      setConnStatus('offline');
+    }
+  }
+
+  // ── Calendar render ────────────────────────────────────────────────────────
+  function getWeeksOfMonth(year, month) {
+    const weeks = [];
+    const lastDay = new Date(year, month + 1, 0);
+    let cursor = new Date(year, month, 1);
+    const dow = cursor.getDay();
+    cursor.setDate(cursor.getDate() + (dow === 0 ? -6 : 1 - dow));
+
+    while (cursor <= lastDay) {
+      const week = [];
+      for (let i = 0; i < 5; i++) {
+        const d = new Date(cursor);
+        week.push(d.getMonth() === month ? d : null);
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      cursor.setDate(cursor.getDate() + 2);
+      if (week.some(d => d !== null)) weeks.push(week);
+    }
+    return weeks;
+  }
+
+  // Firebase keys use underscores (no dots/slashes allowed in paths)
+  function makeKey(d, pi) {
+    return `${d.getFullYear()}_${d.getMonth()}_${d.getDate()}_${pi}`;
+  }
+
+  function renderCalendar() {
+    const y = currentMonth.getFullYear();
+    const m = currentMonth.getMonth();
+    const weeks = getWeeksOfMonth(y, m);
+    const inner = document.getElementById('calendarInner');
+
+    let html = `<div class="day-header-row">
+      <div class="day-header-cell">Person</div>
+      ${DAYS_SHORT.map(d => `<div class="day-header-cell">${d}</div>`).join('')}
+    </div>`;
+
+    weeks.forEach(week => {
+      html += `<div class="week-group">`;
+
+      // Date number row
+      html += `<div class="week-date-row"><div class="week-date-cell"></div>`;
+      week.forEach(d => {
+        if (!d) { html += `<div class="week-date-cell"></div>`; return; }
+        const isToday = d.getTime() === today.getTime();
+        html += `<div class="week-date-cell${isToday ? ' today-date' : ''}">${d.getDate()}</div>`;
+      });
+      html += `</div>`;
+
+      // Person rows
+      PEOPLE.forEach((person, pi) => {
+        html += `<div class="person-row"><div class="person-name">${person}</div>`;
+        week.forEach(d => {
+          if (!d) { html += `<div class="avail-cell" style="background:transparent;cursor:default"></div>`; return; }
+          const isPast = d < today;
+          const key = makeKey(d, pi);
+          const state = availability[key] || null;
+          const effective = state || DEFAULTS[pi]; // use default if no explicit value
+          const isDefault = !state;
+          const dataAttrs = `data-key="${key}" data-person="${pi}" data-date="${d.toISOString()}"`;
+          const lbl = STATE_LABELS[effective];
+          const cls = effective;
+          const pastCls = isPast ? ' past' : '';
+          const defaultAttr = isDefault ? ' data-is-default="1"' : '';
+          html += `<div class="avail-cell ${cls}${pastCls}" ${dataAttrs}${defaultAttr}>${lbl}</div>`;
+        });
+        html += `</div>`;
+      });
+
+      html += `</div>`;
+    });
+
+    inner.innerHTML = html;
+    inner.querySelectorAll('.avail-cell[data-key]').forEach(cell => {
+      cell.addEventListener('click', e => openPopup(e, cell));
+    });
+  }
+
+  // ── Last updated ───────────────────────────────────────────────────────────
+  function renderLastUpdated(iso) {
+    const el = document.getElementById('lastUpdated');
+    if (!el || !iso) { if (el) el.innerHTML = ''; return; }
+    const d = new Date(iso);
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    el.innerHTML = `<div class="lu-dot"></div>Last updated&nbsp;<strong>${dateStr} at ${timeStr}</strong>`;
+  }
+
+  // ── Month navigation ───────────────────────────────────────────────────────
+  function updateMonthLabel() {
+    document.getElementById('monthLabel').textContent =
+      currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    document.getElementById('prevBtn').disabled = currentMonth <= minMonth;
+    document.getElementById('nextBtn').disabled =
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1) > maxMonth;
+  }
+
+  document.getElementById('prevBtn').addEventListener('click', () => {
+    if (currentMonth > minMonth) {
+      currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+      updateMonthLabel(); renderCalendar();
+    }
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    const next = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+    if (next <= maxMonth) { currentMonth = next; updateMonthLabel(); renderCalendar(); }
+  });
+
+  // ── Popup ──────────────────────────────────────────────────────────────────
+  let activeKey = null;
+
+  function openPopup(e, cell) {
+    e.stopPropagation();
+    activeKey = cell.dataset.key;
+    const pi = cell.dataset.person;
+    const d = new Date(cell.dataset.date);
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    document.getElementById('popupTitle').textContent = `${PEOPLE[pi]} · ${dateStr}`;
+
+    const cur = availability[activeKey];
+    const effectiveCur = cur || DEFAULTS[pi];
+    ['morning','afternoon','allday','unavailable'].forEach(s => {
+      document.getElementById('chk' + s.charAt(0).toUpperCase() + s.slice(1)).style.display =
+        effectiveCur === s ? 'inline' : 'none';
+    });
+
+    const menu = document.getElementById('popupMenu');
+    menu.style.display = 'block';
+    document.getElementById('popupOverlay').style.display = 'block';
+
+    const rect = cell.getBoundingClientRect();
+    let top = rect.bottom + 6, left = rect.left;
+    if (left + 170 > window.innerWidth - 8) left = window.innerWidth - 178;
+    if (top + 230 > window.innerHeight - 8) top = rect.top - 230;
+    menu.style.top = top + 'px';
+    menu.style.left = left + 'px';
+  }
+
+  function closePopup() {
+    document.getElementById('popupMenu').style.display = 'none';
+    document.getElementById('popupOverlay').style.display = 'none';
+    activeKey = null;
+  }
+
+  document.getElementById('popupOverlay').addEventListener('click', closePopup);
+
+  document.querySelectorAll('.popup-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const val = opt.dataset.val;
+      if (!activeKey) return;
+      const key = activeKey;
+      closePopup();
+      writeAvail(key, val === 'clear' ? null : val);
+    });
+  });
+
+  // ── Dark mode ──────────────────────────────────────────────────────────────
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+    document.getElementById('toggleTrack').classList.toggle('on', darkMode);
+    localStorage.setItem('calMIR_dark', darkMode ? '1' : '0');
+  }
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    darkMode = !darkMode; applyTheme();
+  });
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  applyTheme();
+  updateMonthLabel();
+  renderCalendar(); // renders empty grid while Firebase loads
+</script>
+</body>
+</html>
