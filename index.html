@@ -158,7 +158,8 @@
   .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
   /* Legend */
-  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 20px; }
+  .legend-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; margin-bottom: 12px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
   .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .legend-dot.morning { background: var(--morning-dot); }
@@ -284,9 +285,8 @@
   /* Last updated */
   .last-updated {
     display: flex; align-items: center; gap: 6px;
-    margin-top: 10px; padding: 0 2px;
     font-size: 11px; color: var(--text-tertiary);
-    min-height: 16px;
+    white-space: nowrap;
   }
   .lu-dot {
     width: 5px; height: 5px; border-radius: 50%;
@@ -299,6 +299,68 @@
     .app-title { font-size: 16px; }
     .connection-badge .conn-label { display: none; }
     body { padding: 16px 12px 40px; }
+  }
+
+  @media (max-width: 480px) {
+    :root {
+      --name-col: 50px;
+      --cell-radius: 6px;
+    }
+
+    body { padding: 12px 8px 32px; }
+
+    .app-title { font-size: 14px; }
+    .header-right { gap: 6px; }
+    .connection-badge { padding: 4px 8px; }
+    .theme-toggle { padding: 4px 7px; gap: 5px; }
+    .theme-toggle .icon { font-size: 12px; }
+
+    .month-label { font-size: 14px; }
+    .nav-btn { width: 28px; height: 28px; font-size: 14px; }
+
+    .legend { gap: 5px 10px; margin-bottom: 8px; }
+    .legend-item { font-size: 11px; gap: 5px; }
+
+    .calendar-inner { min-width: unset; }
+
+    .day-header-row,
+    .week-date-row,
+    .person-row { padding-left: 8px; padding-right: 8px; }
+
+    .week-date-row { padding-top: 4px; }
+    .person-row { padding-top: 3px; padding-bottom: 3px; }
+    .person-row:last-child { padding-bottom: 8px; }
+
+    .day-header-cell { padding: 8px 1px; font-size: 10px; letter-spacing: 0.2px; }
+    .week-date-cell { font-size: 10px; padding: 1px 1px; }
+    .person-name { font-size: 11px; }
+
+    .avail-cell {
+      margin: 2px 2px;
+      min-height: 30px;
+      font-size: 10px;
+      padding: 3px 1px;
+    }
+
+    /* Bottom sheet popup on mobile */
+    .popup-menu {
+      position: fixed !important;
+      left: 10px !important;
+      right: 10px !important;
+      top: auto !important;
+      bottom: 20px !important;
+      width: auto;
+      min-width: unset;
+      border-radius: 16px;
+      animation: slideUp 0.18s cubic-bezier(.4,0,.2,1);
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .popup-overlay { background: rgba(0,0,0,0.25); }
+    .popup-option { padding: 12px 16px; font-size: 14px; }
+    .popup-title { padding: 12px 16px 6px; }
   }
 </style>
 </head>
@@ -326,11 +388,14 @@
     <button class="nav-btn" id="nextBtn">&#8250;</button>
   </div>
 
-  <div class="legend">
-    <div class="legend-item"><div class="legend-dot morning"></div>Morning (AM)</div>
-    <div class="legend-item"><div class="legend-dot afternoon"></div>Afternoon (PM)</div>
-    <div class="legend-item"><div class="legend-dot allday"></div>All Day</div>
-    <div class="legend-item"><div class="legend-dot unavail"></div>OFF</div>
+  <div class="legend-bar">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot morning"></div>Morning (AM)</div>
+      <div class="legend-item"><div class="legend-dot afternoon"></div>Afternoon (PM)</div>
+      <div class="legend-item"><div class="legend-dot allday"></div>All Day</div>
+      <div class="legend-item"><div class="legend-dot unavail"></div>OFF</div>
+    </div>
+    <div class="last-updated" id="lastUpdated"></div>
   </div>
 
   <div class="calendar-card">
@@ -340,8 +405,7 @@
     </div>
   </div>
 
-  <div class="last-updated" id="lastUpdated"></div>
-  <footer>Tap any cell to set availability &nbsp;·&nbsp; Providers Availability</footer>
+  <footer>Tap any cell to set availability &nbsp;·&nbsp;</footer>
 </div>
 
 <!-- Popup -->
