@@ -217,11 +217,43 @@
     padding: 6px 12px 0;
   }
   .week-date-cell {
-    text-align: center; font-size: 11px;
-    color: var(--text-tertiary); font-weight: 500; padding: 2px 4px;
+    font-size: 11px; color: var(--text-tertiary); font-weight: 500;
+    padding: 2px 4px; display: flex; flex-direction: column; align-items: center;
   }
   .week-date-cell.today-date { color: #C96A12; font-weight: 700; }
-  .week-date-cell:first-child { text-align: left; }
+  .week-date-cell:first-child { align-items: flex-start; }
+  .date-clickable { cursor: pointer; }
+  .date-clickable:hover .date-num { color: var(--afternoon-dot); }
+  .date-num { display: block; line-height: 1; }
+  .bday-tag {
+    display: flex; align-items: center; gap: 1px;
+    font-size: 9px; font-weight: 600; color: var(--morning-dot);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 100%; line-height: 1.2; margin-top: 2px;
+  }
+  /* Birthday popup form */
+  .bday-body { padding: 8px 14px 14px; }
+  .bday-input {
+    width: 100%; padding: 8px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface-2);
+    color: var(--text-primary); font-size: 13px; font-family: inherit;
+    outline: none; transition: border-color 0.15s; box-sizing: border-box;
+  }
+  .bday-input:focus { border-color: var(--afternoon-dot); }
+  .bday-btn-row { display: flex; gap: 8px; margin-top: 10px; }
+  .bday-save {
+    flex: 1; padding: 8px; border-radius: 8px; border: none;
+    background: var(--afternoon-dot); color: #fff;
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .bday-save:hover { opacity: 0.85; }
+  .bday-clear {
+    padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-tertiary);
+    font-size: 13px; cursor: pointer; font-family: inherit; transition: background 0.1s;
+  }
+  .bday-clear:hover { background: var(--surface-2); }
 
   .person-row {
     display: grid;
@@ -419,6 +451,19 @@
   <div class="popup-option" data-val="clear" style="border-top:1px solid var(--border);color:var(--text-tertiary);font-size:12px"><div class="opt-dot" style="background:transparent"></div>Reset to default</div>
 </div>
 
+<!-- Birthday Popup -->
+<div class="popup-overlay" id="bdayOverlay" style="display:none;"></div>
+<div class="popup-menu" id="bdayMenu" style="display:none; min-width:220px;">
+  <div class="popup-title" id="bdayTitle">🎁 Birthday</div>
+  <div class="bday-body">
+    <input type="text" class="bday-input" id="bdayInput" placeholder="Person's name…" maxlength="30">
+    <div class="bday-btn-row">
+      <button class="bday-save" id="bdaySave">Save</button>
+      <button class="bday-clear" id="bdayClear">Clear</button>
+    </div>
+  </div>
+</div>
+
 <!-- Firebase SDK (compat v9) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -437,8 +482,9 @@
 
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
-  const availRef = db.ref('availability');
-  const metaRef  = db.ref('meta');
+  const availRef     = db.ref('availability');
+  const metaRef      = db.ref('meta');
+  const birthdaysRef = db.ref('birthdays');
 
   // ── App state ──────────────────────────────────────────────────────────────
   const today = new Date();
@@ -449,6 +495,7 @@
   let currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   let darkMode = localStorage.getItem('calMIR_dark') === '1';
   let availability = {};
+  let birthdays = {};
 
   const PEOPLE = ['Dr.Ruiz', 'Damaris'];
   const DEFAULTS = ['morning', 'unavailable']; // Dra. → AM, Damaris → OFF
@@ -492,6 +539,11 @@
     console.error('Firebase read error:', err.code, err.message);
     setConnStatus('offline');
     hideLoading();
+  });
+
+  birthdaysRef.on('value', snap => {
+    birthdays = snap.val() || {};
+    renderCalendar();
   });
 
   // Last updated from Firebase
@@ -538,9 +590,12 @@
     return weeks;
   }
 
-  // Firebase keys use underscores (no dots/slashes allowed in paths)
   function makeKey(d, pi) {
     return `${d.getFullYear()}_${d.getMonth()}_${d.getDate()}_${pi}`;
+  }
+
+  function makeBdayKey(d) {
+    return `${d.getMonth()}_${d.getDate()}`;
   }
 
   function renderCalendar() {
@@ -562,7 +617,12 @@
       week.forEach(d => {
         if (!d) { html += `<div class="week-date-cell"></div>`; return; }
         const isToday = d.getTime() === today.getTime();
-        html += `<div class="week-date-cell${isToday ? ' today-date' : ''}">${d.getDate()}</div>`;
+        const bdayKey = makeBdayKey(d);
+        const bdayName = birthdays[bdayKey] || null;
+        html += `<div class="week-date-cell date-clickable${isToday ? ' today-date' : ''}" data-bday-key="${bdayKey}" data-bday-date="${d.toISOString()}">
+          <span class="date-num">${d.getDate()}</span>
+          ${bdayName ? `<span class="bday-tag">🎁 ${bdayName}</span>` : ''}
+        </div>`;
       });
       html += `</div>`;
 
@@ -592,6 +652,9 @@
     inner.innerHTML = html;
     inner.querySelectorAll('.avail-cell[data-key]').forEach(cell => {
       cell.addEventListener('click', e => openPopup(e, cell));
+    });
+    inner.querySelectorAll('.date-clickable[data-bday-key]').forEach(cell => {
+      cell.addEventListener('click', e => openBdayPopup(e, cell));
     });
   }
 
@@ -671,6 +734,60 @@
       closePopup();
       writeAvail(key, val === 'clear' ? null : val);
     });
+  });
+
+  // ── Birthday popup ─────────────────────────────────────────────────────────
+  let activeBdayKey = null;
+
+  function openBdayPopup(e, cell) {
+    e.stopPropagation();
+    activeBdayKey = cell.dataset.bdayKey;
+    const d = new Date(cell.dataset.bdayDate);
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    document.getElementById('bdayTitle').textContent = `🎁 · ${dateStr}`;
+    document.getElementById('bdayInput').value = birthdays[activeBdayKey] || '';
+
+    const menu = document.getElementById('bdayMenu');
+    menu.style.display = 'block';
+    document.getElementById('bdayOverlay').style.display = 'block';
+
+    const rect = cell.getBoundingClientRect();
+    let top = rect.bottom + 6, left = rect.left;
+    if (left + 230 > window.innerWidth - 8) left = window.innerWidth - 238;
+    if (top + 160 > window.innerHeight - 8) top = rect.top - 160;
+    menu.style.top = top + 'px';
+    menu.style.left = left + 'px';
+
+    setTimeout(() => document.getElementById('bdayInput').focus(), 50);
+  }
+
+  function closeBdayPopup() {
+    document.getElementById('bdayMenu').style.display = 'none';
+    document.getElementById('bdayOverlay').style.display = 'none';
+    activeBdayKey = null;
+  }
+
+  document.getElementById('bdayOverlay').addEventListener('click', closeBdayPopup);
+
+  document.getElementById('bdaySave').addEventListener('click', () => {
+    const name = document.getElementById('bdayInput').value.trim();
+    if (!activeBdayKey) return;
+    const key = activeBdayKey;
+    closeBdayPopup();
+    if (name) birthdaysRef.child(key).set(name);
+    else birthdaysRef.child(key).remove();
+  });
+
+  document.getElementById('bdayClear').addEventListener('click', () => {
+    if (!activeBdayKey) return;
+    const key = activeBdayKey;
+    closeBdayPopup();
+    birthdaysRef.child(key).remove();
+  });
+
+  document.getElementById('bdayInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('bdaySave').click();
+    if (e.key === 'Escape') closeBdayPopup();
   });
 
   // ── Dark mode ──────────────────────────────────────────────────────────────
