@@ -243,14 +243,16 @@
   .bday-btn-row { display: flex; gap: 8px; margin-top: 10px; }
   .bday-save {
     flex: 1; padding: 8px; border-radius: 8px; border: none;
-    background: var(--afternoon-dot); color: #fff;
+    background: #185FA5; color: #fff;
     font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
     transition: opacity 0.15s;
   }
   .bday-save:hover { opacity: 0.85; }
+  [data-theme="dark"] .bday-save { background: #2d7dd2; }
   .bday-clear {
-    padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
-    background: transparent; color: var(--text-tertiary);
+    padding: 8px 12px; border-radius: 8px;
+    border: 1px solid var(--text-tertiary);
+    background: transparent; color: var(--text-secondary);
     font-size: 13px; cursor: pointer; font-family: inherit; transition: background 0.1s;
   }
   .bday-clear:hover { background: var(--surface-2); }
