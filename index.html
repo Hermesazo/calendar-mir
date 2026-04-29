@@ -443,15 +443,15 @@
   // ── App state ──────────────────────────────────────────────────────────────
   const today = new Date();
   today.setHours(0,0,0,0);
-  const minMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const maxMonth = new Date(today.getFullYear(), today.getMonth() + 3, 1);
+  const minMonth = new Date(today.getFullYear(), 0, 1);
+  const maxMonth = new Date(today.getFullYear(), 11, 1);
 
-  let currentMonth = new Date(minMonth);
+  let currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   let darkMode = localStorage.getItem('calMIR_dark') === '1';
   let availability = {};
 
   const PEOPLE = ['Dr.Ruiz', 'Damaris'];
-  const DEFAULTS = ['morning', 'afternoon']; // Dra. → AM, Damaris → PM
+  const DEFAULTS = ['morning', 'unavailable']; // Dra. → AM, Damaris → OFF
   const STATE_LABELS = { morning: 'AM', afternoon: 'PM', allday: 'All Day', unavailable: 'OFF' };
   const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
