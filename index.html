@@ -74,6 +74,12 @@
   .app-title { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
   .app-title span { font-weight: 300; color: var(--text-secondary); }
   .header-right { display: flex; align-items: center; gap: 10px; }
+  .header-logo {
+    background: #ffffff; margin: 2px; border-radius: 8px;
+    padding: 4px 8px; display: flex; align-items: center;
+    box-shadow: var(--shadow-sm);
+  }
+  .header-logo img { height: 36px; width: auto; display: block; }
 
   /* Connection badge */
   .connection-badge {
@@ -403,6 +409,9 @@
 <div class="app">
   <header>
     <div class="app-title">Providers <span>Availability</span></div>
+    <div class="header-logo">
+      <img src="logo mir.jpg" alt="Miami Institute for Rheumatology">
+    </div>
     <div class="header-right">
       <div class="connection-badge" id="connBadge">
         <div class="conn-dot syncing" id="connDot"></div>
