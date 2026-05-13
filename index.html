@@ -295,6 +295,96 @@
   .avail-cell.past { opacity: 0.38; filter: saturate(0.6); }
   .avail-cell.past:hover { opacity: 0.62; filter: saturate(0.85); transform: scale(1.04); box-shadow: var(--shadow-md); }
 
+  /* Note badge */
+  .note-badge {
+    position: absolute; top: 2px; right: 2px;
+    background: rgba(0,0,0,0.28); color: #fff;
+    font-size: 8px; font-weight: 700; line-height: 1;
+    padding: 2px 4px; border-radius: 4px;
+    min-width: 14px; text-align: center;
+    cursor: pointer; z-index: 2;
+    transition: background 0.1s;
+  }
+  .note-badge:hover { background: rgba(0,0,0,0.55); }
+
+  /* Notes modal */
+  .notes-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.4);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .notes-modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.22), 0 4px 12px rgba(0,0,0,0.1);
+    width: 100%; max-width: 340px; max-height: 80vh;
+    display: flex; flex-direction: column; overflow: hidden;
+    animation: popIn 0.15s cubic-bezier(.4,0,.2,1);
+  }
+  .notes-modal-header {
+    font-size: 11px; font-weight: 600; color: var(--text-tertiary);
+    letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .notes-modal-close {
+    background: none; border: none; cursor: pointer;
+    font-size: 16px; color: var(--text-tertiary); padding: 0 2px;
+    line-height: 1; border-radius: 4px;
+    transition: color 0.1s, background 0.1s;
+  }
+  .notes-modal-close:hover { color: var(--text-primary); background: var(--surface-2); }
+  .notes-list { overflow-y: auto; flex: 1; }
+  .notes-empty {
+    font-size: 12px; color: var(--text-tertiary);
+    text-align: center; padding: 24px 16px;
+  }
+  .note-item {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+  }
+  .note-item:last-child { border-bottom: none; }
+  .note-item-body { flex: 1; min-width: 0; }
+  .note-item-text {
+    font-size: 13px; font-weight: 500; color: var(--text-primary);
+    word-break: break-word; line-height: 1.4;
+  }
+  .note-item-meta { font-size: 10px; color: var(--text-tertiary); margin-top: 3px; }
+  .note-item-actions { display: flex; gap: 2px; flex-shrink: 0; padding-top: 1px; }
+  .note-action-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 14px; padding: 3px 5px; border-radius: 5px;
+    color: var(--text-tertiary); line-height: 1;
+    transition: background 0.1s, color 0.1s;
+  }
+  .note-action-btn:hover { background: var(--surface-2); color: var(--text-primary); }
+  .note-action-btn.del:hover { color: #dc2626; }
+  .notes-add-row {
+    display: flex; gap: 8px; align-items: flex-end;
+    padding: 10px 14px; border-top: 1px solid var(--border); flex-shrink: 0;
+  }
+  .notes-input {
+    flex: 1; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 10px;
+    font-size: 13px; font-family: inherit; color: var(--text-primary);
+    outline: none; resize: none; min-height: 34px; max-height: 80px;
+  }
+  .notes-input:focus { border-color: var(--allday-dot); }
+  .notes-save-btn {
+    background: var(--allday-dot); color: #fff; border: none;
+    border-radius: 8px; padding: 7px 12px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    flex-shrink: 0; transition: opacity 0.1s;
+  }
+  .notes-save-btn:hover { opacity: 0.85; }
+  .notes-footer {
+    font-size: 10px; color: var(--text-tertiary);
+    padding: 6px 14px 10px; flex-shrink: 0;
+    border-top: 1px solid var(--border);
+  }
+
   /* Popup */
   .popup-overlay { position: fixed; inset: 0; z-index: 100; background: transparent; }
   .popup-menu {
@@ -460,6 +550,7 @@
   <div class="popup-option" data-val="allday"><div class="opt-dot" style="background:var(--allday-dot)"></div>All Day<span class="check" id="chkAllday" style="display:none">✓</span></div>
   <div class="popup-option" data-val="unavailable"><div class="opt-dot" style="background:var(--unavail-dot)"></div>OFF<span class="check" id="chkUnavailable" style="display:none">✓</span></div>
   <div class="popup-option" data-val="clear" style="border-top:1px solid var(--border);color:var(--text-tertiary);font-size:12px"><div class="opt-dot" style="background:transparent"></div>Reset to default</div>
+  <div class="popup-option" data-val="notes" style="border-top:1px solid var(--border)"><div class="opt-dot" style="background:transparent;font-size:12px">📝</div>Notes<span id="popupNotesCount" style="margin-left:auto;font-size:10px;color:var(--allday-dot);font-weight:700"></span></div>
 </div>
 
 <!-- Birthday Popup -->
@@ -472,6 +563,22 @@
       <button class="bday-save" id="bdaySave">Save</button>
       <button class="bday-clear" id="bdayClear">Clear</button>
     </div>
+  </div>
+</div>
+
+<!-- Notes Modal -->
+<div class="notes-overlay" id="notesOverlay" style="display:none;">
+  <div class="notes-modal">
+    <div class="notes-modal-header">
+      <span id="notesModalTitle">📝 Notes</span>
+      <button class="notes-modal-close" id="notesModalClose">✕</button>
+    </div>
+    <div class="notes-list" id="notesList"></div>
+    <div class="notes-add-row">
+      <textarea class="notes-input" id="notesInput" placeholder="Agregar nota…" rows="1"></textarea>
+      <button class="notes-save-btn" id="notesSaveBtn">Agregar</button>
+    </div>
+    <div class="notes-footer" id="notesFooter" style="display:none"></div>
   </div>
 </div>
 
@@ -496,6 +603,7 @@
   const availRef     = db.ref('availability');
   const metaRef      = db.ref('meta');
   const birthdaysRef = db.ref('birthdays');
+  const notesRef     = db.ref('notes');
 
   // ── App state ──────────────────────────────────────────────────────────────
   const today = new Date();
@@ -507,6 +615,7 @@
   let darkMode = localStorage.getItem('calMIR_dark') === '1';
   let availability = {};
   let birthdays = {};
+  let notes = {};
 
   const PEOPLE = ['Dr.Ruiz', 'Damaris'];
   const DEFAULTS = ['morning', 'unavailable']; // Dra. → AM, Damaris → OFF
@@ -557,6 +666,12 @@
     renderCalendar();
   });
 
+  notesRef.on('value', snap => {
+    notes = snap.val() || {};
+    renderCalendar();
+    if (activeNotesKey) renderNotesList();
+  });
+
   // Last updated from Firebase
   metaRef.child('lastUpdate').on('value', snap => {
     const val = snap.val();
@@ -577,6 +692,30 @@
     } catch (err) {
       console.error('Firebase write error:', err);
       setConnStatus('offline');
+    }
+  }
+
+  async function writeNote(cellKey, noteId, text) {
+    const ref = notesRef.child(cellKey);
+    const ts = new Date().toISOString();
+    if (noteId) {
+      await ref.child(noteId).update({ text, ts });
+    } else {
+      await ref.push({ text, ts });
+    }
+    await ref.child('_touch').set(ts);
+  }
+
+  async function deleteNote(cellKey, noteId) {
+    const ref = notesRef.child(cellKey);
+    await ref.child(noteId).remove();
+    const snap = await ref.once('value');
+    const val = snap.val();
+    const hasNotes = val && Object.keys(val).some(k => k !== '_touch');
+    if (!hasNotes) {
+      await ref.remove();
+    } else {
+      await ref.child('_touch').set(new Date().toISOString());
     }
   }
 
@@ -652,7 +791,9 @@
           const cls = effective;
           const pastCls = isPast ? ' past' : '';
           const defaultAttr = isDefault ? ' data-is-default="1"' : '';
-          html += `<div class="avail-cell ${cls}${pastCls}" ${dataAttrs}${defaultAttr}>${lbl}</div>`;
+          const noteCount = notes[key] ? Object.keys(notes[key]).filter(k => k !== '_touch').length : 0;
+          const badgeHtml = noteCount > 0 ? `<span class="note-badge">${noteCount}</span>` : '';
+          html += `<div class="avail-cell ${cls}${pastCls}" ${dataAttrs}${defaultAttr}>${lbl}${badgeHtml}</div>`;
         });
         html += `</div>`;
       });
@@ -663,6 +804,13 @@
     inner.innerHTML = html;
     inner.querySelectorAll('.avail-cell[data-key]').forEach(cell => {
       cell.addEventListener('click', e => openPopup(e, cell));
+    });
+    inner.querySelectorAll('.note-badge').forEach(badge => {
+      badge.addEventListener('click', e => {
+        e.stopPropagation();
+        const cell = badge.closest('.avail-cell');
+        openNotesPopup(cell.dataset.key, cell.dataset.person, new Date(cell.dataset.date));
+      });
     });
     inner.querySelectorAll('.date-clickable[data-bday-key]').forEach(cell => {
       cell.addEventListener('click', e => openBdayPopup(e, cell));
@@ -717,6 +865,9 @@
         effectiveCur === s ? 'inline' : 'none';
     });
 
+    const nCount = notes[activeKey] ? Object.keys(notes[activeKey]).filter(k => k !== '_touch').length : 0;
+    document.getElementById('popupNotesCount').textContent = nCount > 0 ? `(${nCount})` : '';
+
     const menu = document.getElementById('popupMenu');
     menu.style.display = 'block';
     document.getElementById('popupOverlay').style.display = 'block';
@@ -742,6 +893,14 @@
       const val = opt.dataset.val;
       if (!activeKey) return;
       const key = activeKey;
+      if (val === 'notes') {
+        const cell = document.querySelector(`.avail-cell[data-key="${key}"]`);
+        const pi = cell ? cell.dataset.person : '0';
+        const d = cell ? new Date(cell.dataset.date) : new Date();
+        closePopup();
+        openNotesPopup(key, pi, d);
+        return;
+      }
       closePopup();
       writeAvail(key, val === 'clear' ? null : val);
     });
@@ -799,6 +958,118 @@
   document.getElementById('bdayInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('bdaySave').click();
     if (e.key === 'Escape') closeBdayPopup();
+  });
+
+  // ── Notes modal ────────────────────────────────────────────────────────────
+  let activeNotesKey = null;
+  let editingNoteId = null;
+
+  function openNotesPopup(cellKey, pi, d) {
+    activeNotesKey = cellKey;
+    editingNoteId = null;
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    document.getElementById('notesModalTitle').textContent = `📝 ${PEOPLE[pi]} · ${dateStr}`;
+    document.getElementById('notesInput').value = '';
+    document.getElementById('notesSaveBtn').textContent = 'Agregar';
+    renderNotesList();
+    document.getElementById('notesOverlay').style.display = 'flex';
+    setTimeout(() => document.getElementById('notesInput').focus(), 60);
+  }
+
+  function closeNotesPopup() {
+    document.getElementById('notesOverlay').style.display = 'none';
+    activeNotesKey = null;
+    editingNoteId = null;
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function renderNotesList() {
+    if (!activeNotesKey) return;
+    const cellData = notes[activeNotesKey] || {};
+    const entries = Object.entries(cellData).filter(([k]) => k !== '_touch');
+    const list = document.getElementById('notesList');
+    const footer = document.getElementById('notesFooter');
+
+    if (entries.length === 0) {
+      list.innerHTML = `<div class="notes-empty">Sin notas aún</div>`;
+    } else {
+      list.innerHTML = entries.map(([id, note]) => {
+        const tsStr = note.ts
+          ? new Date(note.ts).toLocaleString('es-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : '';
+        return `<div class="note-item" data-note-id="${id}">
+          <div class="note-item-body">
+            <div class="note-item-text">${escHtml(note.text)}</div>
+            <div class="note-item-meta">${tsStr}</div>
+          </div>
+          <div class="note-item-actions">
+            <button class="note-action-btn edit" title="Editar">✏️</button>
+            <button class="note-action-btn del" title="Eliminar">🗑️</button>
+          </div>
+        </div>`;
+      }).join('');
+
+      list.querySelectorAll('.note-action-btn.edit').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.closest('.note-item').dataset.noteId;
+          editingNoteId = id;
+          document.getElementById('notesInput').value = notes[activeNotesKey][id].text;
+          document.getElementById('notesSaveBtn').textContent = 'Guardar';
+          document.getElementById('notesInput').focus();
+        });
+      });
+
+      list.querySelectorAll('.note-action-btn.del').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.closest('.note-item').dataset.noteId;
+          await deleteNote(activeNotesKey, id);
+        });
+      });
+    }
+
+    const touch = cellData._touch;
+    if (touch) {
+      const dt = new Date(touch);
+      footer.textContent = `Última edición: ${dt.toLocaleString('es-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+      footer.style.display = 'block';
+    } else {
+      footer.style.display = 'none';
+    }
+  }
+
+  document.getElementById('notesOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('notesOverlay')) closeNotesPopup();
+  });
+
+  document.getElementById('notesModalClose').addEventListener('click', closeNotesPopup);
+
+  document.getElementById('notesSaveBtn').addEventListener('click', async () => {
+    const text = document.getElementById('notesInput').value.trim();
+    if (!text || !activeNotesKey) return;
+    const noteId = editingNoteId;
+    editingNoteId = null;
+    document.getElementById('notesInput').value = '';
+    document.getElementById('notesSaveBtn').textContent = 'Agregar';
+    await writeNote(activeNotesKey, noteId, text);
+  });
+
+  document.getElementById('notesInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      document.getElementById('notesSaveBtn').click();
+    }
+    if (e.key === 'Escape') {
+      if (editingNoteId) {
+        editingNoteId = null;
+        document.getElementById('notesInput').value = '';
+        document.getElementById('notesSaveBtn').textContent = 'Agregar';
+      } else {
+        closeNotesPopup();
+      }
+    }
   });
 
   // ── Dark mode ──────────────────────────────────────────────────────────────
